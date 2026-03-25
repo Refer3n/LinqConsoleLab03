@@ -354,7 +354,20 @@ public sealed class LinqExercises
     /// </summary>
     public IEnumerable<string> Challenge03_LecturersAndAverageGradeAcrossTheirCourses()
     {
-        throw NotImplemented(nameof(Challenge03_LecturersAndAverageGradeAcrossTheirCourses));
+        var result = UniversityData.Lecturers
+            .Select(l => new
+            {
+                l.FirstName,
+                l.LastName,
+                AvgGrade = UniversityData.Courses
+                    .Where(c => c.LecturerId == l.Id)
+                    .SelectMany(c => UniversityData.Enrollments.Where(e => e.CourseId == c.Id))
+                    .Where(e => e.FinalGrade.HasValue)
+                    .Select(e => e.FinalGrade)
+                    .Average()
+            });
+        return result.Select(r => $"{r.FirstName} {r.LastName}," +
+                                  $" Average Grade: {r.AvgGrade?.ToString("F2") ?? "N/A"}");
     }
 
     /// <summary>
@@ -372,7 +385,21 @@ public sealed class LinqExercises
     /// </summary>
     public IEnumerable<string> Challenge04_CitiesAndActiveEnrollmentCounts()
     {
-        throw NotImplemented(nameof(Challenge04_CitiesAndActiveEnrollmentCounts));
+        var result = UniversityData.Students.Join(
+                UniversityData.Enrollments,
+                s => s.Id,
+                e => e.StudentId,
+                (s, e) => new { s.City, e.IsActive })
+            .Where(x => x.IsActive)
+            .GroupBy(x => x.City)
+            .Select(g => new
+            {
+                City = g.Key,
+                Count = g.Count()
+            })
+            .OrderByDescending(g => g.Count);
+
+        return result.Select(r => $"{r.City}: {r.Count}");
     }
 
     private static NotImplementedException NotImplemented(string methodName)
